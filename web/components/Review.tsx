@@ -1,0 +1,14 @@
+"use client";
+
+import { useState } from "react";
+import { ArrowLeft, Check, Plus, Save, Trash2 } from "lucide-react";
+import { OcrDocument } from "@/lib/documents";
+
+export function Review({document: doc, onBack}: {document: OcrDocument; onBack: () => void}) {
+  const [lines, setLines] = useState([{name:"Giấy in Double A A4",qty:"10",price:"1.250.000",amount:"12.500.000"},{name:"Mực in HP LaserJet",qty:"5",price:"910.000",amount:"4.550.000"}]);
+  return <div className="page"><button className="back" onClick={onBack}><ArrowLeft size={16}/> Quay lại danh sách</button><div className="pageHead"><div><h1>Kiểm tra chứng từ</h1><p>{doc.file} · Tải lên hôm nay lúc 09:42</p></div><span className="badge waiting_review">Chờ kiểm tra</span></div>
+    <div className="reviewGrid"><section className="preview"><header><h2>Bản gốc</h2><span>− &nbsp; 100% &nbsp; ＋</span></header><div className="paperArea"><article className="paper"><div><b>CÔNG TY TNHH AN PHÁT</b><h2>HÓA ĐƠN GIÁ TRỊ GIA TĂNG</h2><small>Ngày 04 tháng 07 năm 2026 · Số: {doc.number}</small></div><p><b>Đơn vị bán hàng:</b> {doc.vendor}<br/><b>Mã số thuế:</b> {doc.taxCode}<br/><b>Địa chỉ:</b> Quận Cầu Giấy, Hà Nội</p><table><thead><tr><th>STT</th><th>Tên hàng hóa</th><th>SL</th><th>Đơn giá</th><th>Thành tiền</th></tr></thead><tbody>{lines.map((l,i)=><tr key={i}><td>{i+1}</td><td>{l.name}</td><td>{l.qty}</td><td>{l.price}</td><td>{l.amount}</td></tr>)}</tbody></table><aside><p>Cộng tiền hàng: <b>17.050.000</b></p><p>Tiền thuế GTGT: <b>1.705.000</b></p><p>Tổng thanh toán: <b>18.755.000</b></p></aside></article></div></section>
+    <section className="reviewForm"><header><h2>Dữ liệu trích xuất</h2><button className="secondary"><Save size={14}/> Lưu nháp</button></header><div className="formBody"><div className="confidence">✦ Độ tin cậy OCR tổng thể <strong>{doc.confidence}%</strong></div><div className="formGrid">{[["Loại chứng từ",doc.type],["Số hóa đơn",doc.number],["Ngày hóa đơn",doc.date],["Ký hiệu","1C26TAP"],["Tên người bán",doc.vendor],["Mã số thuế",doc.taxCode],["Tổng trước thuế","17.050.000"],["Tiền thuế VAT","1.705.000"],["Tổng thanh toán","18.755.000"]].map(([label,value],i)=><label className={i===4?"wide":""} key={label}><span>{label}</span><input defaultValue={value}/></label>)}</div>
+    <div className="lineHead"><b>Hàng hóa, dịch vụ</b><button onClick={()=>setLines([...lines,{name:"",qty:"1",price:"0",amount:"0"}])}><Plus size={14}/> Thêm dòng</button></div>{lines.map((l,i)=><div className="lineItem" key={i}><input defaultValue={l.name}/><input defaultValue={l.qty}/><input defaultValue={l.amount}/><button onClick={()=>setLines(lines.filter((_,x)=>x!==i))}><Trash2 size={15}/></button></div>)}<footer><button className="secondary">Từ chối</button><button className="primary" onClick={onBack}><Check size={16}/> Duyệt chứng từ</button></footer></div></section></div>
+  </div>;
+}

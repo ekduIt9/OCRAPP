@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ScanBiz — Document OCR</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <aside class="sidebar">
+      <a class="brand" href="#" data-view="dashboard" aria-label="ScanBiz">
+        <span class="brand-mark">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3H5a2 2 0 0 0-2 2v2M17 3h2a2 2 0 0 1 2 2v2M7 21H5a2 2 0 0 1-2-2v-2M17 21h2a2 2 0 0 0 2-2v-2M7 8h10M7 12h7M7 16h9"/></svg>
+        </span>
+        <span>ScanBiz</span>
+      </a>
+      <nav>
+        <button class="nav-item active" data-view="dashboard"><span>⌂</span> Tổng quan</button>
+        <button class="nav-item" data-view="documents"><span>▤</span> Chứng từ <b id="navCount">8</b></button>
+        <button class="nav-item" data-action="open-upload"><span>＋</span> Tải lên</button>
+        <p class="nav-label">QUẢN LÝ</p>
+        <button class="nav-item" data-view="vendors"><span>♙</span> Nhà cung cấp</button>
+        <button class="nav-item" data-view="team"><span>♧</span> Thành viên</button>
+        <button class="nav-item" data-view="reports"><span>▥</span> Báo cáo</button>
+      </nav>
+      <div class="quota">
+        <div class="quota-top"><span>Lượt OCR tháng 7</span><strong>68%</strong></div>
+        <div class="progress"><i></i></div>
+        <small>204 / 300 chứng từ</small>
+        <button>Nâng cấp gói</button>
+      </div>
+      <button class="profile">
+        <span class="avatar">AN</span>
+        <span><strong>An Nguyễn</strong><small>Kế toán viên</small></span>
+        <span>⋮</span>
+      </button>
+    </aside>
+
+    <main>
+      <header class="topbar">
+        <button class="mobile-menu" id="mobileMenu">☰</button>
+        <div class="global-search">
+          <span>⌕</span>
+          <input id="globalSearch" placeholder="Tìm số hóa đơn, MST, nhà cung cấp...">
+          <kbd>⌘ K</kbd>
+        </div>
+        <div class="top-actions">
+          <button class="icon-btn" aria-label="Thông báo">♢<i></i></button>
+          <button class="primary-btn" data-action="open-upload"><span>＋</span> Tải chứng từ</button>
+        </div>
+      </header>
+
+      <section id="content"></section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="uploadModal" aria-hidden="true">
+    <section class="modal">
+      <header><div><h2>Tải chứng từ lên</h2><p>Hệ thống tự động nhận dạng và trích xuất dữ liệu.</p></div><button class="close-modal">×</button></header>
+      <div class="dropzone" id="dropzone">
+        <input id="fileInput" type="file" accept=".jpg,.jpeg,.png,.pdf" multiple hidden>
+        <div class="upload-art">⇧</div>
+        <h3>Kéo và thả file vào đây</h3>
+        <p>hoặc <button id="chooseFile">chọn file từ máy tính</button></p>
+        <small>JPG, PNG hoặc PDF · Tối đa 20 MB/file</small>
+      </div>
+      <div id="uploadQueue"></div>
+      <footer><button class="ghost-btn close-modal">Hủy</button><button class="primary-btn" id="processFiles" disabled>Đọc chứng từ</button></footer>
+    </section>
+  </div>
+
+  <div class="toast" id="toast"><span>✓</span><div><strong id="toastTitle">Thành công</strong><p id="toastText"></p></div></div>
+  <script src="app.js"></script>
+</body>
+</html>
