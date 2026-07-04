@@ -11,6 +11,17 @@ export type OcrDocument = {
   amount: number;
   status: DocumentStatus;
   confidence: number;
+  symbol?: string;
+  address?: string;
+  buyer?: string;
+  buyerTaxCode?: string;
+  subtotal?: number;
+  taxAmount?: number;
+  currency?: string;
+  sourceUrl?: string;
+  fileType?: string;
+  warnings?: string[];
+  items?: Array<{name: string; unit?: string; quantity: number; unitPrice: number; amount: number; taxRate?: number}>;
 };
 
 export const documents: OcrDocument[] = [

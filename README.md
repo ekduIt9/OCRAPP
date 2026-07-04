@@ -31,8 +31,10 @@ index.html Prototype HTML ban đầu, giữ làm bản tham chiếu giao diện
 - Duyệt chứng từ.
 - Điều hướng Trang chủ, Chứng từ, Báo cáo, Tài khoản.
 
-Hiện dữ liệu đang là mock để hoàn thiện UX. OCR engine, đăng nhập, API,
-database, lưu file và đồng bộ realtime là phần backend tiếp theo.
+Web đã có OCR thật cho JPG, PNG và PDF bằng Tesseract.js + PDF.js. Toàn bộ
+xử lý chạy trong trình duyệt, không cần API key và không mất phí dịch vụ.
+Danh sách mặc định vẫn có dữ liệu mẫu để demo. Đăng nhập, database, lưu file
+lâu dài và đồng bộ realtime là phần backend tiếp theo.
 
 ## Chạy web Next.js
 

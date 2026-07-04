@@ -2,9 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { Download, Search, Upload } from "lucide-react";
-import { documents, OcrDocument, statusLabel } from "@/lib/documents";
+import { OcrDocument, statusLabel } from "@/lib/documents";
 
-export function Documents({onReview, onUpload}: {onReview: (doc: OcrDocument) => void; onUpload: () => void}) {
+export function Documents({documents, onReview, onUpload}: {documents: OcrDocument[]; onReview: (doc: OcrDocument) => void; onUpload: () => void}) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("");
   const filtered = useMemo(() => documents.filter(d => (!status || d.status === status) && Object.values(d).join(" ").toLowerCase().includes(query.toLowerCase())), [query, status]);
