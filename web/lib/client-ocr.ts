@@ -5,6 +5,14 @@ import type { OcrDocument } from "./documents";
 type Progress = (percent: number, label: string) => void;
 
 const clean = (value = "") => value.replace(/\s+/g, " ").trim();
+const fold = (value = "") => value
+  .normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "")
+  .replace(/đ/gi, "d")
+  .replace(/\bhoa\s+pon\b/gi, "hoa don")
+  .replace(/\bpon\s+vi\s+ban\b/gi, "don vi ban")
+  .replace(/\bs[óo6]\b/gi, "so")
+  .toLowerCase();
 const numberValue = (value = "") => {
   const normalized = value.replace(/[^\d.,-]/g, "");
   if (!normalized) return 0;
@@ -27,13 +35,23 @@ const find = (text: string, patterns: RegExp[]) => {
 const normalizeDate = (value: string) => {
   const numeric = value.match(/(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})/);
   if (numeric) return `${numeric[1].padStart(2, "0")}/${numeric[2].padStart(2, "0")}/${numeric[3]}`;
-  const written = value.match(/(\d{1,2})\s*tháng\s*(\d{1,2})\s*năm\s*(\d{4})/i);
+  const written = fold(value).match(/(\d{1,2})\s*thang\s*(\d{1,2})\s*nam\s*(\d{4})/i);
   if (written) return `${written[1].padStart(2, "0")}/${written[2].padStart(2, "0")}/${written[3]}`;
   return clean(value);
 };
 
 const allMatches = (text: string, pattern: RegExp) =>
   [...text.matchAll(pattern)].map(match => clean(match[1] ?? ""));
+
+function lineValue(text: string, labels: string[]) {
+  for (const line of text.split(/\r?\n/)) {
+    const normalized = fold(line);
+    if (!labels.some(label => normalized.includes(label))) continue;
+    const colon = Math.max(line.indexOf(":"), line.indexOf("："));
+    if (colon >= 0) return clean(line.slice(colon + 1));
+  }
+  return "";
+}
 
 function parseItems(text: string) {
   const units = "chiếc|cái|bộ|hộp|thùng|kg|gói|chai|dịch vụ|lần|tháng|cây|quyển|tờ";
@@ -56,41 +74,38 @@ function parseItems(text: string) {
 }
 
 function parseInvoice(text: string, file: File): Omit<OcrDocument, "id" | "sourceUrl"> {
-  const upper = text.toUpperCase();
-  const type = upper.includes("PHIẾU GIAO HÀNG") ? "Phiếu giao hàng"
-    : upper.includes("PHIẾU NHẬP KHO") ? "Phiếu nhập kho"
-    : upper.includes("PHIẾU XUẤT KHO") ? "Phiếu xuất kho"
-    : upper.includes("HÓA ĐƠN BÁN HÀNG") || upper.includes("HOA DON BAN HANG") ? "Hóa đơn bán hàng"
-    : upper.includes("HÓA ĐƠN") || upper.includes("HOA DON") ? "Hóa đơn VAT"
+  const normalized = fold(text);
+  const type = normalized.includes("phieu giao hang") ? "Phiếu giao hàng"
+    : normalized.includes("phieu nhap kho") ? "Phiếu nhập kho"
+    : normalized.includes("phieu xuat kho") ? "Phiếu xuất kho"
+    : normalized.includes("hoa don ban hang") ? "Hóa đơn bán hàng"
+    : normalized.includes("hoa don") ? "Hóa đơn VAT"
     : "Chứng từ khác";
-  const taxCodes = allMatches(text, /(?:mã số thuế|mst|tax code)\s*[:：]?\s*([0-9O][0-9O\-.\s]{8,16})/gi)
+  const taxCodes = allMatches(normalized, /(?:ma so thue|mst|tax code)\s*[:：]?\s*([0-9o][0-9o\-.\s]{8,16})/gi)
     .map(value => value.replace(/[O]/gi, "0").replace(/[\s.]/g, ""));
   const taxCode = taxCodes[0] || "";
   const buyerTaxCode = taxCodes[1] || "";
-  const date = normalizeDate(find(text, [
-    /(?:ngày|date)\s*[:：]?\s*(\d{1,2}[\/.-]\d{1,2}[\/.-]\d{4})/i,
-    /ngày\s+(\d{1,2}\s+tháng\s+\d{1,2}\s+năm\s+\d{4})/i,
+  const date = normalizeDate(find(normalized, [
+    /(?:ngay|date)\s*[:：]?\s*(\d{1,2}[\/.-]\d{1,2}[\/.-]\d{4})/i,
+    /ngay\s+(\d{1,2}\s+thang\s+\d{1,2}\s+nam\s+\d{4})/i,
   ]));
-  const number = find(text, [
-    /^\s*số\s*[:：]\s*([0-9O]{5,20})\s*$/im,
-    /(?:số hóa đơn|invoice\s*no)\s*[:：]?\s*([A-Z0-9\-\/]{3,30})/i,
+  const number = find(normalized, [
+    /^\s*so\s*[:：]\s*([0-9o]{5,20})\s*$/im,
+    /(?:so hoa don|invoice\s*no)\s*[:：]?\s*([a-z0-9\-\/]{3,30})/i,
   ]).replace(/O/gi, "0");
-  const symbol = find(text, [/(?:ký hiệu|serial)\s*[:：]?\s*([A-Z0-9\-\/]{3,30})/i]);
-  const vendor = find(text, [
-    /(?:đơn vị bán hàng|đơn vị bán|tên người bán|seller)\s*[:：]?\s*([^\n]{3,120})/i,
-    /((?:CÔNG TY|CTY|HỘ KINH DOANH)[^\n]{3,120})/i,
-  ]);
-  const addresses = allMatches(text, /(?:địa chỉ|address)\s*[:：]?\s*([^\n]{5,180})/gi);
+  const symbol = find(normalized, [/(?:ky hieu|serial)\s*[:：]?\s*([a-z0-9\-\/]{3,30})/i]).toUpperCase();
+  const vendor = lineValue(text, ["don vi ban hang", "don vi ban", "ten nguoi ban", "seller"]);
+  const addresses = text.split(/\r?\n/).filter(line => fold(line).includes("dia chi")).map(line => {
+    const colon = line.indexOf(":");
+    return clean(colon >= 0 ? line.slice(colon + 1) : line);
+  });
   const address = addresses[0] || "";
-  const buyer = find(text, [
-    /(?:tên đơn vị|đơn vị mua|tên người mua|buyer)\s*[:：]?\s*([^\n]{3,120})/i,
-    /họ tên người mua hàng\s*[:：]?\s*([^\n]{3,120})/i,
+  const buyer = lineValue(text, ["ten don vi", "don vi mua", "ten nguoi mua", "buyer", "ho ten nguoi mua hang"]);
+  const totalRaw = find(normalized, [
+    /(?:tong tien thanh toan|tong cong tien thanh toan|tong cong thanh toan|tong thanh toan|total payment|grand total)\s*[:：]?\s*([0-9][0-9.,\s]{2,})/i,
   ]);
-  const totalRaw = find(text, [
-    /(?:tổng tiền thanh toán|tổng cộng thanh toán|tổng thanh toán|total payment|grand total)\s*[:：]?\s*([0-9][0-9.,\s]{2,})/i,
-  ]);
-  const taxRaw = find(text, [/(?:tiền thuế gtgt|tiền thuế vat|vat amount)\s*[:：]?\s*([0-9][0-9.,\s]{2,})/i]);
-  const subtotalRaw = find(text, [/(?:cộng tiền hàng|tổng tiền trước thuế|subtotal)\s*[:：]?\s*([0-9][0-9.,\s]{2,})/i]);
+  const taxRaw = find(normalized, [/(?:tien thue gtgt|tien thue vat|vat amount)\s*[:：]?\s*([0-9][0-9.,\s]{2,})/i]);
+  const subtotalRaw = find(normalized, [/(?:cong tien hang|tong tien truoc thue|subtotal)\s*[:：]?\s*([0-9][0-9.,\s]{2,})/i]);
   const subtotal = numberValue(subtotalRaw);
   const taxAmount = numberValue(taxRaw);
   const amount = numberValue(totalRaw) || subtotal + taxAmount;
@@ -142,9 +157,29 @@ function enhanceCanvas(canvas: HTMLCanvasElement) {
   return canvas;
 }
 
+function cropCanvas(source: HTMLCanvasElement, x: number, y: number, width: number, height: number) {
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(source.width * width);
+  canvas.height = Math.round(source.height * height);
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Trình duyệt không hỗ trợ Canvas.");
+  context.drawImage(
+    source,
+    source.width * x,
+    source.height * y,
+    source.width * width,
+    source.height * height,
+    0,
+    0,
+    canvas.width,
+    canvas.height,
+  );
+  return canvas;
+}
+
 async function prepareImage(file: File) {
   const bitmap = await createImageBitmap(file);
-  const scale = Math.max(1, Math.min(2.5, 2000 / bitmap.width));
+  const scale = Math.max(1, Math.min(2, 1600 / bitmap.width));
   const canvas = document.createElement("canvas");
   canvas.width = Math.round(bitmap.width * scale);
   canvas.height = Math.round(bitmap.height * scale);
@@ -193,9 +228,34 @@ export async function recognizeDocument(file: File, progress: Progress): Promise
         confidences.push(result.data.confidence);
       }
     } else {
-      const result = await worker.recognize(await prepareImage(file));
+      const prepared = await prepareImage(file);
+      const result = await worker.recognize(prepared);
       text = result.data.text;
       confidences.push(result.data.confidence);
+
+      let parsed = parseInvoice(text, file);
+      const needsHeader = parsed.number === "Chưa nhận dạng" || !parsed.symbol;
+      const needsTable = !parsed.items?.length || !parsed.amount;
+      if (needsHeader || needsTable) {
+        await worker.setParameters({
+          preserve_interword_spaces: "1",
+          tessedit_pageseg_mode: "6",
+        });
+      }
+      if (needsHeader) {
+        progress(82, "Đang đọc lại số và ký hiệu hóa đơn...");
+        const header = cropCanvas(prepared, .68, .01, .30, .16);
+        const headerResult = await worker.recognize(header);
+        text += `\n${headerResult.data.text}`;
+        confidences.push(headerResult.data.confidence);
+      }
+      if (needsTable) {
+        progress(88, "Đang đọc lại bảng hàng hóa và tổng tiền...");
+        const table = cropCanvas(prepared, .02, .45, .96, .24);
+        const tableResult = await worker.recognize(table);
+        text += `\n${tableResult.data.text}`;
+        confidences.push(tableResult.data.confidence);
+      }
     }
   } finally {
     await worker.terminate();
@@ -203,6 +263,7 @@ export async function recognizeDocument(file: File, progress: Progress): Promise
   progress(94, "Đang tách dữ liệu hóa đơn...");
   if (!text.trim()) throw new Error("Không đọc được chữ trong chứng từ. Hãy thử ảnh rõ hơn.");
   const result = parseInvoice(text, file);
+  result.rawText = text;
   if (confidences.length) {
     result.confidence = Math.round(confidences.reduce((sum, value) => sum + value, 0) / confidences.length);
   }

@@ -21,6 +21,7 @@ export type OcrDocument = {
   sourceUrl?: string;
   fileType?: string;
   warnings?: string[];
+  rawText?: string;
   items?: Array<{name: string; unit?: string; quantity: number; unitPrice: number; amount: number; taxRate?: number}>;
 };
 

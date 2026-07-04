@@ -46,6 +46,7 @@ export function Review({document: doc, onBack}: {document: OcrDocument; onBack: 
         <div className="formBody">
           <div className="confidence">✦ Độ tin cậy OCR tổng thể <strong>{doc.confidence}%</strong></div>
           {doc.warnings?.map(warning => <div className="ocrWarning" key={warning}>⚠ {warning}</div>)}
+          {doc.rawText && <details className="rawOcr"><summary>Xem văn bản OCR gốc</summary><pre>{doc.rawText}</pre></details>}
           <div className="formGrid">{fields.map(([label, value], index) => <label className={index === 4 ? "wide" : ""} key={label}><span>{label}</span><input defaultValue={value}/></label>)}</div>
           <div className="lineHead"><b>Hàng hóa, dịch vụ</b><button onClick={() => setLines([...lines, {name:"", qty:"1", price:"0", amount:"0"}])}><Plus size={14}/> Thêm dòng</button></div>
           {lines.length === 0 && <div className="ocrWarning">Không nhận dạng được dòng hàng. Bạn có thể thêm thủ công.</div>}
